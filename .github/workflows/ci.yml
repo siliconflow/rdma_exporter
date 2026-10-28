@@ -1,3 +1,5 @@
+# CI workflow for rdma_exporter, following the hannuus repo conventions.
+
 name: CI
 
 on:
@@ -9,26 +11,31 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-test:
-    name: Build and Test
+  test:
+    name: Build, lint and test
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    env:
-      GOFLAGS: -buildvcs=false
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
           cache: true
 
       - name: Build
-        run: go build ./...
+        run: make build
+
+      - name: Lint ($GO vet)
+        run: make lint
 
       - name: Test
         run: go test -race ./...

@@ -1,0 +1,57 @@
+# Integration workflow for rdma_exporter, following the hannuus repo conventions.
+# The exporter has no unit-level sysfs fixtures instead of real RDMA hardware, so the
+# integration job builds the binary and runs the full fixture-backed test suite.
+
+name: rdma_exporter Integration
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "**/*.go"
+      - "Dockerfile"
+      - "Makefile"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/integration.yml"
+  push:
+    branches: [main]
+    paths:
+      - "**/*.go"
+      - "Dockerfile"
+      - "Makefile"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/integration.yml"
+
+concurrency:
+  group: rdma-exporter-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    name: Build and run integration test suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build binary
+        run: |
+          make build
+          ./rdma_exporter --version
+
+      - name: Run integration test suite
+        run: go test -race ./...
