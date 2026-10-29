@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "rdma_exporter.fullname" . }}
+  namespace: {{ include "rdma_exporter.namespace" . }}
+  labels:
+    {{- include "rdma_exporter.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "rdma_exporter.selectorLabels" . | nindent 6 }}
+  updateStrategy:
+    type: {{ .Values.updateStrategy.type }}
+    {{- if eq .Values.updateStrategy.type "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.updateStrategy.rollingUpdate.maxUnavailable }}
+    {{- end }}
+  template:
+    metadata:
+      annotations:
+        {{- include "rdma_exporter.podAnnotations" . | nindent 8 }}
+      labels:
+        {{- include "rdma_exporter.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "rdma_exporter.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: rdma-exporter
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 10 }}
+        image: "{{ .Values.image.repo }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        args:
+        - --listen-address={{ .Values.listenAddress }}
+        - --metrics-path={{ .Values.metricsPath }}
+        - --health-path={{ .Values.healthPath }}
+        - --sysfs-root={{ .Values.sysfsRoot }}
+        - --scrape-timeout={{ .Values.scrapeTimeout }}
+        {{- if .Values.collectors.ethtool }}
+        - --collector.ethtool
+        {{- else }}
+        - --no-collector.ethtool
+        {{- end }}
+        {{- if .Values.collectors.optionalCounters }}
+        - --collector.optional-counters
+        {{- else }}
+        - --no-collector.optional-counters
+        {{- end }}
+        {{- if .Values.collectors.qpCounters }}
+        - --collector.qp-counters
+        {{- end }}
+        {{- if .Values.excludeDevices }}
+        - --exclude-devices={{ .Values.excludeDevices }}
+        {{- end }}
+        ports:
+        - name: metrics
+          containerPort: {{ .Values.metrics.port }}
+          protocol: TCP
+        volumeMounts:
+        {{- range .Values.hostVolumes }}
+        - name: {{ .name }}
+          mountPath: {{ .mountDir }}
+          readOnly: {{ .readOnly | default false }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.healthPath }}
+            port: metrics
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.metricsPath }}
+            port: metrics
+      volumes:
+      {{- range .Values.hostVolumes }}
+      - name: {{ .name }}
+        hostPath:
+          path: {{ .hostDir }}
+          type: Directory
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

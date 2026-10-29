@@ -1,0 +1,27 @@
+{{- if and .Values.metrics.enabled .Values.metrics.podMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "rdma_exporter.podMonitorName" . }}
+  namespace: {{ include "rdma_exporter.namespace" . }}
+  labels:
+    {{- include "rdma_exporter.labels" . | nindent 4 }}
+    {{- with .Values.metrics.podMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "rdma_exporter.selectorLabels" . | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+    - {{ include "rdma_exporter.namespace" . }}
+  podMetricsEndpoints:
+  - port: metrics
+    interval: {{ .Values.metrics.podMonitor.interval | default "15s" }}
+    relabelings:
+    - action: replace
+      sourceLabels:
+      - __meta_kubernetes_pod_node_name
+      targetLabel: node
+{{- end }}

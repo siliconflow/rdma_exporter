@@ -1,0 +1,37 @@
+{{- if .Values.service.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rdma_exporter.serviceName" . }}
+  namespace: {{ include "rdma_exporter.namespace" . }}
+  labels:
+    {{- include "rdma_exporter.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+  - name: metrics
+    port: {{ .Values.service.port }}
+    targetPort: {{ .Values.service.targetPort }}
+    protocol: TCP
+  selector:
+    {{- include "rdma_exporter.selectorLabels" . | nindent 4 }}
+{{- if .Values.metrics.podMonitor.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rdma_exporter.serviceName" . }}-headless
+  namespace: {{ include "rdma_exporter.namespace" . }}
+  labels:
+    {{- include "rdma_exporter.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+  - name: metrics
+    port: {{ .Values.service.port }}
+    targetPort: {{ .Values.service.targetPort }}
+    protocol: TCP
+  selector:
+    {{- include "rdma_exporter.selectorLabels" . | nindent 4 }}
+{{- end }}
+{{- end }}
