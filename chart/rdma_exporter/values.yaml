@@ -1,0 +1,113 @@
+# Default values for rdma_exporter.
+
+# Resource name overrides
+nameOverride: ""
+fullnameOverride: ""
+
+# Namespace override (defaults to release namespace)
+namespace: ""
+
+image:
+  repo: hub.6scloud.com/d1r7umcsfi9c73b4drdg/rdma_exporter
+  tag: v2026.10.29-rc1
+  pullPolicy: IfNotPresent
+
+imagePullSecrets:
+  - name: regcred
+
+# rdma_exporter runtime configuration.
+# Both the --flag and the equivalent RDMA_EXPORTER_* env var are accepted by
+# the binary; we pass them as args.
+listenAddress: ":9879"
+metricsPath: "/metrics"
+healthPath: "/healthz"
+# Path where host sysfs is mounted inside the container (see hostVolumes).
+sysfsRoot: "/host/sys"
+scrapeTimeout: 5s
+
+collectors:
+  ethtool: true
+  optionalCounters: true
+  qpCounters: false
+
+# Comma-separated list of RDMA devices to exclude (e.g. "mlx5_0,mlx5_1").
+excludeDevices: ""
+
+# Service account
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# Pod annotations / labels
+podAnnotations: {}
+podLabels: {}
+
+# Host sysfs mounted read-only so the exporter can read RDMA devices.
+# hostVolumes entries are passed to --sysfs-root above (first entry expected).
+hostVolumes:
+  - name: sysfs
+    hostDir: /sys
+    mountDir: /host/sys
+    readOnly: true
+    type: Directory
+
+# Metrics HTTP service
+service:
+  enabled: true
+  name: ""
+  type: ClusterIP
+  port: 9879
+  targetPort: 9879
+
+metrics:
+  enabled: true
+  port: 9879
+  podMonitor:
+    enabled: true
+    name: ""
+    interval: 15s
+    labels: {}
+
+# Node selector for pod placement (e.g. only nodes with RDMA NICs)
+nodeSelector: {}
+  # kubernetes.io/hostname: rdma-worker-1
+
+# Tolerations for the DaemonSet
+tolerations: []
+  # - key: node-role.kubernetes.io/control-plane
+  #   operator: Exists
+  #   effect: NoSchedule
+
+# Affinity rules
+affinity: {}
+
+# Resources limits and requests
+resources:
+  requests:
+    cpu: 100m
+    memory: 64Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# Security context
+podSecurityContext: {}
+  # fsGroup: 1000
+
+securityContext: {}
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# Update strategy for DaemonSet
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+
+# PodDisruptionBudget
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+  # maxUnavailable: 1

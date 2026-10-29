@@ -1,0 +1,7 @@
+apiVersion: v2
+name: rdma_exporter
+description: A Helm chart for rdma_exporter - Prometheus RDMA (InfiniBand/RoCE) node exporter,
+  deployed as a DaemonSet to scrape per-node sysfs and NETLINK_RDMA counters.
+type: application
+version: 0.1.0
+appVersion: "0.7.3"
