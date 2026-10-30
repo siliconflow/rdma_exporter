@@ -63,10 +63,11 @@ service:
 metrics:
   enabled: true
   port: 9879
-  podMonitor:
+  serviceMonitor:
     enabled: true
     name: ""
     interval: 15s
+    scrapeTimeout: 10s
     labels: {}
 
 # Node selector for pod placement (e.g. only nodes with RDMA NICs)
