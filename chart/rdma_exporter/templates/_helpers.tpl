@@ -67,10 +67,10 @@ Create the name of the service to use
 {{- end }}
 
 {{/*
-Create the name of the PodMonitor to use
+Create the name of the ServiceMonitor to use
 */}}
-{{- define "rdma_exporter.podMonitorName" -}}
-{{- default (include "rdma_exporter.fullname" .) .Values.metrics.podMonitor.name }}
+{{- define "rdma_exporter.serviceMonitorName" -}}
+{{- default (include "rdma_exporter.fullname" .) .Values.metrics.serviceMonitor.name }}
 {{- end }}
 
 {{/*

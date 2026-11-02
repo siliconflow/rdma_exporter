@@ -15,7 +15,7 @@ spec:
     protocol: TCP
   selector:
     {{- include "rdma_exporter.selectorLabels" . | nindent 4 }}
-{{- if .Values.metrics.podMonitor.enabled }}
+{{- if .Values.metrics.serviceMonitor.enabled }}
 ---
 apiVersion: v1
 kind: Service

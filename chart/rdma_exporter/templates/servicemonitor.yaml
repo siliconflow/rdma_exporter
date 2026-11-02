@@ -1,0 +1,37 @@
+{{- if and .Values.metrics.enabled .Values.metrics.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "rdma_exporter.serviceMonitorName" . }}
+  namespace: {{ include "rdma_exporter.namespace" . }}
+  labels:
+    {{- include "rdma_exporter.labels" . | nindent 4 }}
+    {{- with .Values.metrics.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "rdma_exporter.selectorLabels" . | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+    - {{ include "rdma_exporter.namespace" . }}
+  endpoints:
+  - port: metrics
+    interval: {{ .Values.metrics.serviceMonitor.interval | default "15s" }}
+    {{- if .Values.metrics.serviceMonitor.scrapeTimeout }}
+    scrapeTimeout: {{ .Values.metrics.serviceMonitor.scrapeTimeout }}
+    {{- end }}
+    honorLabels: false
+    relabelings:
+    - action: replace
+      sourceLabels:
+      - __meta_kubernetes_endpoint_node_name
+      targetLabel: instance
+    - sourceLabels:
+      - __meta_kubernetes_namespace
+      targetLabel: namespace
+    - sourceLabels:
+      - __meta_kubernetes_pod_name
+      targetLabel: pod
+{{- end }}
